@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NamiECR Flutter SDK - دليل التكامل</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #f0f0f0;
+            color: #e83e8c; /* لون وردي للكود المضمن ليكون واضحاً */
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            dir: ltr; /* Codes remain LTR */
+            display: inline-block;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            direction: ltr; /* Important for code blocks to be LTR */
+            text-align: left;
+        }
+        pre code {
+            background-color: transparent; /* إزالة الخلفية للكود داخل الكتل */
+            color: inherit; /* استخدام اللون الفاتح من pre */
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: right;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        blockquote {
+            background-color: #e8f4fd;
+            border-right: 5px solid #3498db; /* Specific for RTL */
+            margin: 10px 0;
+            padding: 10px 20px;
+            color: #555;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NamiECR Flutter SDK</h1>
+    <h2>مواصفات التكامل لنظامي Android و iOS</h2>
+
+    <h2>نظرة عامة</h2>
+    <p>يصف هذا المستند كيفية دمج <strong>NamiECR Flutter SDK</strong> لقبول المدفوعات، ومعالجة المعاملات، وإرجاع الردود إلى التطبيق المستدعي.</p>
+    <p>تم تصميم SDK للمطورين ذوي الخبرة في:</p>
+    <ul>
+        <li>أنظمة نقاط البيع (POS)</li>
+        <li>Flutter / Android / iOS</li>
+        <li>تكامل واجهات برمجة التطبيقات (API) والبرمجة كائنية التوجه (OOP)</li>
+    </ul>
+
+    <hr>
+
+    <h2>العمليات المدعومة</h2>
+    <ul>
+        <li>تهيئة SDK (Initialize SDK)</li>
+        <li>اتصال الطرفية (Connect Terminal)</li>
+        <li>فصل الطرفية (Disconnect Terminal)</li>
+        <li>بدء الدفع (Initiate Payment)</li>
+        <li>التعامل مع استجابة المعاملة (Handle Transaction Response)</li>
+    </ul>
+
+    <hr>
+
+    <h2>أنواع الاتصال</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>المنصة</th>
+                <th>الاتصالات المدعومة</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>iOS</td>
+                <td>TCP/IP</td>
+            </tr>
+            <tr>
+                <td>Android</td>
+                <td>TCP/IP, Bluetooth, App-to-App</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>تهيئة SDK</h2>
+    <pre><code>import NamiECRSDK;</code></pre>
+
+    <hr>
+
+    <h2>اتصال الجهاز</h2>
+
+    <h3>TCP/IP</h3>
+    <pre><code>await tcpSocket.connectTCP(ip, port, cashRegiNum);</code></pre>
+
+    <h3>Bluetooth</h3>
+    <pre><code>await _bluetoothService.connectDevice(device, cashRegiNum);</code></pre>
+
+    <h3>App-to-App</h3>
+    <pre><code>await _webSocketService.connect(cashRegiNum);</code></pre>
+
+    <hr>
+
+    <h2>فصل الجهاز</h2>
+
+    <h3>TCP/IP</h3>
+    <pre><code>tcpSocket.disconnect();</code></pre>
+
+    <h3>Bluetooth</h3>
+    <pre><code>_bluetoothService.disconnectDevice();</code></pre>
+
+    <h3>App-to-App</h3>
+    <pre><code>AppToAppSocket.disconnect();</code></pre>
+
+    <hr>
+
+    <h2>بدء الدفع</h2>
+
+    <h3>رقم الكاشير (CRN)</h3>
+    <p>يجب أن يكون CRN <strong>قيمة رقمية مكونة من 8 أرقام</strong></p>
+    <pre><code>configData.cashRegisterNumber = cashRegiNumber.text;</code></pre>
+
+    <h3>تفضيلات الطباعة</h3>
+    <ul>
+        <li>0 ← تعطيل</li>
+        <li>1 ← تفعيل</li>
+    </ul>
+
+    <hr>
+
+    <h3>إنشاء التوقيع (Signature)</h3>
+    <pre><code>String signature = EncryptionUtil.getSha256Hash(
+  config!.ecrUniqueNo ?? "",
+  config!.terminalId ?? "",
+);</code></pre>
+
+    <hr>
+
+    <h3>إنشاء الرقم المرجعي لـ ECR</h3>
+    <pre><code>final String ecrRef =
+"${config!.cashRegisterNumber}${EncryptionUtil.getSixDigitUniqueNumber()}";</code></pre>
+
+    <hr>
+
+    <h3>تنسيق الطابع الزمني</h3>
+    <pre><code>ddMMyyHHmmss</code></pre>
+
+    <hr>
+
+    <h2>تنسيق طلب المعاملة</h2>
+    <blockquote>
+        يجب تحويل المبلغ إلى <strong>سلسلة رقمية مكونة من 12 خانة</strong><br>
+        مثال: <code>10.25 ← 000000001025</code>
+    </blockquote>
+
+    <h3>مثال الشراء</h3>
+    <pre><code>"${EncryptionUtil.getFormattedDateTime()};
+${payAmount};
+$_printTransactionType!;
+$ecrRef!;"</code></pre>
+
+    <hr>
+
+    <h2>أنواع المعاملات المدعومة</h2>
+    <ul>
+        <li>شراء (Purchase)</li>
+        <li>شراء مع استرداد نقدي (Purchase with Cashback)</li>
+        <li>استرداد (Refund)</li>
+        <li>ترخيص مسبق (Pre-Authorization)</li>
+        <li>إشعار الشراء (إكمال الترخيص المسبق) (Purchase Advice)</li>
+        <li>تمديد الترخيص المسبق (Pre-Auth Extension)</li>
+        <li>إلغاء الترخيص المسبق (Pre-Auth Void)</li>
+        <li>سلفة نقدية (Cash Advance)</li>
+        <li>عكس المعاملة (Reversal)</li>
+        <li>التسوية (Reconciliation)</li>
+        <li>تكرار (Duplicate)</li>
+        <li>طباعة تقرير موجز (Print Summary Report)</li>
+    </ul>
+
+    <hr>
+
+    <h2>التعامل مع الاستجابة</h2>
+    <p>تتضمن الاستجابة ما يلي:</p>
+    <ul>
+        <li>رقم PAN</li>
+        <li>مبلغ المعاملة</li>
+        <li>مبلغ الاسترداد النقدي</li>
+        <li>المبلغ الإجمالي</li>
+        <li>RRN</li>
+        <li>رمز التفويض</li>
+        <li>TID / MID</li>
+        <li>وضع إدخال البطاقة</li>
+        <li>تسمية المخطط (Scheme Label)</li>
+        <li>معلومات التاجر</li>
+        <li>الرقم المرجعي لمعاملة ECR</li>
+        <li>التوقيع</li>
+    </ul>
+
+    <hr>
+
+    <h2>المشكلات المعروفة والحلول</h2>
+
+    <h3>المشكلة 1: Null check operator used on a null value</h3>
+    <p><strong>السبب:</strong> <code>cashRegisterNumber</code> أو <code>terminalId</code> قيمتها null أثناء المعاملة.</p>
+    <p><strong>الحل:</strong><br> تحقق دائماً من قيم التكوين وقدم قيم افتراضية احتياطية قبل بدء المعاملات.</p>
+
+    <hr>
+
+    <h3>المشكلة 2: FormatException -- Invalid UTF-8 byte (Bluetooth)</h3>
+    <p><strong>السبب:</strong><br> قد ترسل أجهزة البلوتوث بايتات خام غير متوافقة مع UTF-8.</p>
+    <p><strong>الحل:</strong><br> قم بفك تشفير الرأس (Header) باستخدام ASCII والحمولة (Payload) باستخدام <code>allowMalformed: true</code>.</p>
+
+    <hr>
+
+    <div class="footer">
+        <p>© 2025 Girmiti Software Private Limited</p>
+        <p>يحتوي هذا المستند على معلومات ملكية وسرية.<br> يُحظر النسخ أو التوزيع غير المصرح به.</p>
+    </div>
+
+</body>
+</html>

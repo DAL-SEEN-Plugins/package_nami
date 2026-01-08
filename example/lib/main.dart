@@ -49,7 +49,14 @@ class _NamiECRDemoState extends State<NamiECRDemo>
     1: "Purchase w/ Cashback",
     2: "Refund",
     3: "Pre-Auth",
+    4: "Purchase Advice",
+    5: "Pre-Auth Extension",
+    6: "Pre-Auth Void",
+    8: "Cash Advance",
+    9: "Reversal",
+    10: "Reconciliation",
     22: "Print Summary",
+    23: "Duplicate",
   };
   int _selectedTrxnType = 0;
 
@@ -66,7 +73,29 @@ class _NamiECRDemoState extends State<NamiECRDemo>
   @override
   void initState() {
     super.initState();
-    // Bluetooth init is done lazily or we can call getDevices to prep permissions
+    _loadSavedConfig();
+  }
+
+  Future<void> _loadSavedConfig() async {
+    try {
+      ConfigModel? config = await ConfigManager.getConfiguration();
+      if (config != null) {
+        if (mounted) {
+          setState(() {
+            if (config.cashRegisterNumber != null &&
+                config.cashRegisterNumber!.isNotEmpty) {
+              _crnController.text = config.cashRegisterNumber!;
+            }
+            if (config.terminalId != null && config.terminalId!.isNotEmpty) {
+              _terminalIdController.text = config.terminalId!;
+              _log("Loaded saved Terminal ID: ${config.terminalId}");
+            }
+          });
+        }
+      }
+    } catch (e) {
+      _log("Error loading config: $e");
+    }
   }
 
   @override
@@ -170,16 +199,79 @@ class _NamiECRDemoState extends State<NamiECRDemo>
 
     switch (_selectedTrxnType) {
       case 0: // Purchase
-        // Transaction Request Format: date;amount;printPref;ecrRef;
-        // IMPORTANT: The doc says "Purchase Example: date;amount;printPref;ecrRef;"
-        // Note the semicolons.
-        reqDataStr = "$dateTime;$amountStr;$printPref;$ecrRef;";
+        reqDataStr = "$dateTime;$amountStr;$printPref!;$ecrRef!;";
         break;
-      case 22: // Print Summary
-        reqDataStr = "$dateTime;$printPref;$ecrRef;";
+
+      case 1: // Purchase with Cashback
+        // For demo: assuming cashback is 1.00
+        String cashbackStr = "000000000100";
+        reqDataStr = "$dateTime;$amountStr;$cashbackStr;$printPref!;$ecrRef!;";
         break;
+
+      case 2: // Refund
+        // For demo: using dummy RRN and Date
+        String rrn = "123456789012";
+        String origRefundDate = DateFormat('ddMMyy').format(DateTime.now());
+        reqDataStr =
+            "$dateTime;$amountStr;$rrn;$printPref!;$origRefundDate;$ecrRef!;";
+        break;
+
+      case 3: // Pre Auth
+        reqDataStr = "$dateTime;$amountStr;$printPref!;$ecrRef!";
+        break;
+
+      case 4: // Purchase Advice (Pre Auth Completion)
+        String rrn4 = "123456789012";
+        String origTransactionDate4 =
+            DateFormat('ddMMyy').format(DateTime.now());
+        String originalApprovalCode4 = "123456";
+        String captureType = "0"; // Full capture
+        reqDataStr =
+            "$dateTime;$amountStr;$rrn4;$origTransactionDate4;$originalApprovalCode4;$captureType;$printPref!;$ecrRef!";
+        break;
+
+      case 5: // Pre Auth Extension
+        String rrn5 = "123456789012";
+        String origTransactionDate5 =
+            DateFormat('ddMMyy').format(DateTime.now());
+        String originalApprovalCode5 = "123456";
+        reqDataStr =
+            "$dateTime;$rrn5;$origTransactionDate5;$originalApprovalCode5;$printPref!;$ecrRef!";
+        break;
+
+      case 6: // Pre Auth Void
+        String originalTransactionAmount6 = amountStr;
+        String origTransactionDate6 =
+            DateFormat('ddMMyy').format(DateTime.now());
+        String originalApprovalCode6 = "123456";
+        reqDataStr =
+            "$dateTime;$originalTransactionAmount6;$origTransactionDate6;$originalApprovalCode6;$printPref!;$ecrRef!";
+        break;
+
+      case 8: // Cash Advance
+        reqDataStr = "$dateTime;$amountStr;$printPref!;$ecrRef!";
+        break;
+
+      case 9: // Reversal
+        String rrn9 = "123456789012";
+        reqDataStr = "$dateTime;$rrn9;$printPref!;$ecrRef!";
+        break;
+
+      case 10: // Reconciliation
+        reqDataStr = "$dateTime;$printPref!;$ecrRef!";
+        break;
+
+      case 22: // Print Summary Report
+        reqDataStr = "$dateTime;$printPref!;$ecrRef!";
+        break;
+
+      case 23: // Duplicate
+        String prevEcrNo = "123456";
+        reqDataStr = "$dateTime;$prevEcrNo;$ecrRef!";
+        break;
+
       default:
-        reqDataStr = "$dateTime;$amountStr;$printPref;$ecrRef;";
+        reqDataStr = "$dateTime;$ecrRef!";
     }
 
     _log("Request Data (Plain): $reqDataStr");
@@ -219,6 +311,15 @@ class _NamiECRDemoState extends State<NamiECRDemo>
 
     // 3. Dispatch
     try {
+      // Refresh Config before transaction to ensure we have the latest Terminal ID from Register Response
+      await _loadSavedConfig();
+      // Update signature with potentially new Terminal ID
+      if (_terminalIdController.text.isNotEmpty) {
+        signature =
+            EncryptionUtil.getSha256Hash(uniqueNo, _terminalIdController.text);
+        _log("Signature updated with TID: ${_terminalIdController.text}");
+      }
+
       if (_selectedConnection == "TCP/IP") {
         await _tcpConnect.doTransaction(
           reqData: hexReqData,

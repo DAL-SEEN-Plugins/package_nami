@@ -11,8 +11,7 @@ class ConfigManager {
         await getConfiguration() ?? ConfigModel(); // Ensure it's not null
 
     ConfigModel configData = ConfigModel(
-      tcpIP:
-          config.tcpIP ??
+      tcpIP: config.tcpIP ??
           storedConfig.tcpIP, // Prioritize new config if available
       tcpPort: config.tcpPort ?? storedConfig.tcpPort,
       cashRegisterNumber:
@@ -20,8 +19,7 @@ class ConfigManager {
       terminalSlNo: config.terminalSlNo ?? storedConfig.terminalSlNo,
       terminalId: config.terminalId ?? storedConfig.terminalId,
       ecrUniqueNo: config.ecrUniqueNo ?? storedConfig.ecrUniqueNo,
-      isTransactionInProgress:
-          config.isTransactionInProgress ??
+      isTransactionInProgress: config.isTransactionInProgress ??
           storedConfig.isTransactionInProgress,
       logLevel: config.logLevel ?? storedConfig.logLevel,
       retetionDays: config.retetionDays ?? storedConfig.retetionDays,
